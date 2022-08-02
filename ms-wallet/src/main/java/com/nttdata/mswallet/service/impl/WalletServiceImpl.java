@@ -1,9 +1,13 @@
 package com.nttdata.mswallet.service.impl;
 
+import com.nttdata.mswallet.config.CacheConfig;
 import com.nttdata.mswallet.model.Wallet;
 import com.nttdata.mswallet.repository.WalletRepository;
 import com.nttdata.mswallet.service.WalletService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
@@ -34,11 +38,13 @@ public class WalletServiceImpl implements WalletService {
     }
 
     @Override
+    @Cacheable(cacheNames = CacheConfig.WALLET_CACHE, unless = "#result == null")
     public Mono<Wallet> findById(String id) {
         return repository.findById(id);
     }
 
     @Override
+    @CachePut(cacheNames = CacheConfig.WALLET_CACHE, key = "#id", unless = "#result == null")
     public Mono<Wallet> update(Wallet w, String id) {
         return repository.findById(id)
                 .flatMap( x -> {
@@ -52,6 +58,7 @@ public class WalletServiceImpl implements WalletService {
     }
 
     @Override
+    @CacheEvict(cacheNames = CacheConfig.WALLET_CACHE, key = "#id")
     public Mono<Wallet> delete(String id) {
         return repository.findById(id)
                 .flatMap( x -> repository.delete(x)
